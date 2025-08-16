@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 # Initialize Groq client
-client = Groq(api_key="")
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # Flask-Mail configuration
 app.config['MAIL_SERVER'] = 'smtp.gmail.com' 
