@@ -1,13 +1,21 @@
 from flask import Flask, render_template, request
 from groq import Groq
-import markdown, os
+import markdown
+from flask_mail import Mail, Message
+import os
 
 app = Flask(__name__)
 
 # Initialize Groq client
+client = Groq(api_key="")
 
-api_key = os.environ.get("GROQ_API_KEY")  # safer
-client = Groq(api_key=api_key)
+# Flask-Mail configuration
+app.config['MAIL_SERVER'] = 'smtp.gmail.com' 
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['phardaha5@gmail.com'] = os.getenv("EMAIL_USER")  
+app.config['nothing'] = os.getenv("EMAIL_PASS")  
+mail = Mail(app)
 
 @app.route('/')
 def index():

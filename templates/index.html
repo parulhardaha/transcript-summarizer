@@ -16,7 +16,7 @@
 <body>
   <div class="container">
     <div class="card p-4">
-      <h2 class="text-center mb-4">AI Transcript Summarizer</h2>
+      <h2 class="text-center mb-4">Transcript Summarizer</h2>
 
       <form method="POST" enctype="multipart/form-data" action="/generate">
         <div class="mb-3">
@@ -44,6 +44,16 @@
         <div class="p-3 border rounded bg-light">
         {{ summary|safe }}
         </div>
+
+        <div class="mb-3">
+        <label for="email" class="form-label">Send summary via email</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="Enter email address">
+        </div>
+
+        <!-- Button to send email -->
+        <button type="submit" name="action" value="send">Send</button>
+    </form>
+
 
       </div>
       {% endif %}
