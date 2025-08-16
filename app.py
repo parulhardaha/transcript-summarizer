@@ -1,11 +1,13 @@
 from flask import Flask, render_template, request
 from groq import Groq
-import markdown
+import markdown, os
 
 app = Flask(__name__)
 
 # Initialize Groq client
-client = Groq(api_key="[REMOVED_GROQ_KEY]")
+
+api_key = os.environ.get("GROQ_API_KEY")  # safer
+client = Groq(api_key=api_key)
 
 @app.route('/')
 def index():
