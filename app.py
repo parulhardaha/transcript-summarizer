@@ -1,20 +1,24 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from groq import Groq
 import markdown
 from flask_mail import Mail, Message
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Flask(__name__)
 
-# Initialize Groq client
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+groq_api_key = os.getenv("GROQ_API_KEY")
+client = Groq(api_key=groq_api_key) if groq_api_key else None
 
-# Flask-Mail configuration
-app.config['MAIL_SERVER'] = 'smtp.gmail.com' 
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['phardaha5@gmail.com'] = os.getenv("EMAIL_USER")  
-app.config['nothing'] = os.getenv("EMAIL_PASS")  
+app.config.update(
+    MAIL_SERVER='smtp.gmail.com',
+    MAIL_PORT=587,
+    MAIL_USE_TLS=True,
+    MAIL_USERNAME=os.getenv("EMAIL_USER"),
+    MAIL_PASSWORD=os.getenv("EMAIL_PASS"),
+    MAIL_DEFAULT_SENDER=os.getenv("EMAIL_USER")
+)
 mail = Mail(app)
 
 @app.route('/')
@@ -24,34 +28,85 @@ def index():
 @app.route('/generate', methods=['POST'])
 def generate_summary():
     summary_html = None
-
-    # Get transcript file
+    transcript = ''
     if 'file' in request.files and request.files['file'].filename != '':
         file = request.files['file']
-        try: 
-            transcript = file.read().decode("utf-8", errors="ignore")
-        except Exception as e: 
-            return render_template("index.html", summary=f"Error reading file: {str(e)}")
+        transcript = file.read().decode("utf-8", errors="ignore")
     else:
-        transcript = request.form.get('transcript', '')  # text input
+        transcript = request.form.get('transcript', '')
 
     prompt = request.form.get('prompt', '')
 
-    #Call Groq API
+    if client is None:
+        summary_html = markdown.markdown("**GROQ API key not set.**")
+    else:
+        try:
+            response = client.chat.completions.create(
+                model="llama3-8b-8192",
+                messages=[
+                    {"role": "system", "content": "You are a meeting summarizer."},
+                    {"role": "user", "content": f"Transcript: {transcript}\nInstruction: {prompt}"}
+                ]
+            )
+            summary_html = markdown.markdown(response.choices[0].message.content)
+        except:
+            summary_html = markdown.markdown("Error generating summary.")
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({"summary": summary_html})
+    return render_template("index.html", summary=summary_html)
+
+@app.route('/send-email', methods=['POST'])
+def send_email():
+    data = request.get_json(silent=True) or request.form
+    recipient = data.get('email')
+    summary = data.get('summary')
+    if not recipient or not summary:
+        return jsonify({"error": "email and summary required"}), 400
+
+    try:
+        mail.send(Message(subject="Summary", recipients=[recipient], html=summary))
+        return jsonify({"status": "sent"})
+    except:
+        import smtplib
+        from email.mime.text import MIMEText
+
+        mime = MIMEText(summary, 'html')
+        mime['Subject'] = 'Summary'
+        mime['From'] = app.config['MAIL_USERNAME']
+        mime['To'] = recipient
+
+        server = smtplib.SMTP(app.config['MAIL_SERVER'], int(app.config['MAIL_PORT']), timeout=10)
+        if app.config['MAIL_USE_TLS']:
+            server.starttls()
+        server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
+        server.sendmail(app.config['MAIL_USERNAME'], [recipient], mime.as_string())
+        server.quit()
+        return jsonify({"status": "sent_via_smtplib"})
+
+@app.route('/health')
+def health():
+    k = os.getenv('GROQ_API_KEY')
+    return {"groq_key_set": bool(k), "groq_key_masked": f"{k[:4]}...{k[-4:]}" if k and len(k) > 8 else "****"}
+
+@app.route('/test-groq', methods=['GET'])
+def test_groq():
+    if client is None:
+        return jsonify({"ok": False, "error": "GROQ_API_KEY not configured"}), 400
     try:
         response = client.chat.completions.create(
             model="llama3-8b-8192",
             messages=[
-                {"role": "system", "content": "You are a meeting summarizer."},
-                {"role": "user", "content": f"Transcript: {transcript}\nInstruction: {prompt}"}
-            ]
+                {"role": "system", "content": "Tiny health-check assistant."},
+                {"role": "user", "content": "Respond with the single word: pong"}
+            ],
+            max_tokens=5,
+            temperature=0
         )
-        summary = response.choices[0].message.content
-        summary_html = markdown.markdown(summary)  # covert to HTML here too
-    except Exception as e:
-        summary_html = markdown.markdown(f"Error generating summary: {str(e)}")
-
-    return render_template("index.html", summary=summary_html)
+        preview = (getattr(response.choices[0].message, 'content', '') or '').strip()[:200]
+        return jsonify({"ok": True, "preview": preview}), 200
+    except:
+        return jsonify({"ok": False, "error": "Groq API error"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

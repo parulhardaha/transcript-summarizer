@@ -1,0 +1,5 @@
+Flask
+groq
+markdown
+Flask-Mail
+python-dotenv

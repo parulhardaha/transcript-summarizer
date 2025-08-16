@@ -18,7 +18,7 @@
     <div class="card p-4">
       <h2 class="text-center mb-4">Transcript Summarizer</h2>
 
-      <form method="POST" enctype="multipart/form-data" action="/generate">
+   <form id="summaryForm" method="POST" enctype="multipart/form-data">
         <div class="mb-3">
           <label for="file" class="form-label">Upload Transcript File (.txt)</label>
           <input class="form-control" type="file" id="file" name="file" accept=".txt">
@@ -38,26 +38,104 @@
         </div>
       </form>
 
-      {% if summary %}
-      <div class="mt-4">
+      <div id="result" class="mt-4" style="display:none">
         <h5>Generated Summary:</h5>
-        <div class="p-3 border rounded bg-light">
-        {{ summary|safe }}
+        <textarea id="summaryBox" class="form-control mb-2" rows="8" placeholder="Summary will appear here..."></textarea>
+
+        <div class="mb-3 mt-3">
+          <label for="email" class="form-label">Send summary via email</label>
+          <input type="email" class="form-control" id="emailInput" placeholder="Enter email address">
         </div>
 
-        <div class="mb-3">
-        <label for="email" class="form-label">Send summary via email</label>
-        <input type="email" class="form-control" id="email" name="email" placeholder="Enter email address">
+        <div class="d-grid">
+          <button id="sendBtn" class="btn btn-secondary">Send Email</button>
         </div>
-
-        <!-- Button to send email -->
-        <button type="submit" name="action" value="send">Send</button>
-    </form>
-
-
       </div>
-      {% endif %}
+
+  <!-- dynamic result area -->
     </div>
   </div>
+    <script>
+  const form = document.getElementById('summaryForm');
+  const result = document.getElementById('result');
+  const summaryBox = document.getElementById('summaryBox');
+      const sendBtn = document.getElementById('sendBtn');
+      const generateBtn = form.querySelector('button[type="submit"]');
+
+      function htmlToText(html) {
+        const d = document.createElement('div');
+        d.innerHTML = html || '';
+        return d.innerText || '';
+      }
+
+      function showResult(html) {
+        // insert plain text into editable textarea
+        summaryBox.value = htmlToText(html) || 'No summary returned';
+        result.style.display = 'block';
+      }
+
+      function showError(msg) {
+        summaryBox.value = msg;
+        result.style.display = 'block';
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Generating...';
+        try {
+          const res = await fetch('/generate', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          });
+
+          if (!res.ok) {
+            const text = await res.text();
+            showError('Server error: ' + (text || res.status));
+            return;
+          }
+
+          const data = await res.json().catch(() => ({ summary: '<em>Invalid response</em>' }));
+          showResult(data.summary);
+        } catch (err) {
+          showError('Network error: ' + err.message);
+        } finally {
+          generateBtn.disabled = false;
+          generateBtn.textContent = 'Generate Summary';
+        }
+      });
+
+      sendBtn.addEventListener('click', async () => {
+  const email = document.getElementById('emailInput').value.trim();
+  const summary = summaryBox.value;
+        if (!email) {
+          alert('Please enter a recipient email');
+          return;
+        }
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending...';
+        try {
+          const res = await fetch('/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ email, summary })
+          });
+
+          const data = await res.json().catch(() => ({ error: 'Invalid response from server' }));
+          if (res.ok && data.status === 'sent') {
+            alert('Email sent');
+          } else {
+            alert('Send failed: ' + (data.error || JSON.stringify(data)));
+          }
+        } catch (err) {
+          alert('Network error: ' + err.message);
+        } finally {
+          sendBtn.disabled = false;
+          sendBtn.textContent = 'Send Email';
+        }
+      });
+    </script>
 </body>
 </html>
