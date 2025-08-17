@@ -1,32 +1,25 @@
-# Transcript Summarizer
+<img width="1920" height="795" alt="Screenshot 2025-08-17 165311" src="https://github.com/user-attachments/assets/647f1c9d-a40f-4588-a61a-f7cd75b1c739" />
 
-Simple Flask app that sends transcripts to Groq for summarization and allows emailing the result.
+This is the home page of the Transcript Summarizer.
 
-Setup
+Features:
 
-1. Create and activate a venv:
+1. Upload a .txt transcript file OR directly paste transcript text in the text area.
 
-```powershell
-python -m venv venv
-& .\venv\Scripts\Activate.ps1
-```
+2. Enter a custom prompt (e.g., "Summarize in 5 bullet points").
+   
+4. Click the Generate Summary button to process the transcript.
 
-2. Install dependencies:
 
-```powershell
-pip install -r requirements.txt
-```
+<img width="1920" height="816" alt="Screenshot 2025-08-17 165339" src="https://github.com/user-attachments/assets/e05e84a2-adad-480b-931a-042c65a09441" />
 
-3. Create a `.env` file (copy `.env.example`) and set `GROQ_API_KEY`, `EMAIL_USER`, and `EMAIL_PASS`.
+After uploading or pasting a transcript and clicking Generate Summary, the app displays results here.
 
-4. Run the app:
+Features:
 
-```powershell
-$env:FLASK_APP = "app.py"
-flask run --debug
-```
+1. A Generated Summary box shows the AI-generated summary in formatted text (Markdown supported).
 
-Notes
+2. The user can save edits to the summary or reset to the original version.
 
-- Do not commit `.env` or any secrets. Rotate exposed keys immediately.
-- The app includes a `/health` endpoint that reports whether `GROQ_API_KEY` is set.
+3. An option to Send summary via email is available — enter an email address and click Send Email.
+
