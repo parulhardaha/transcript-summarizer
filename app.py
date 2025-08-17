@@ -71,16 +71,17 @@ def send_email():
         import smtplib
         from email.mime.text import MIMEText
 
+        # to format emal content
         mime = MIMEText(summary, 'html')
         mime['Subject'] = 'Summary'
         mime['From'] = app.config['MAIL_USERNAME']
         mime['To'] = recipient
 
-        server = smtplib.SMTP(app.config['MAIL_SERVER'], int(app.config['MAIL_PORT']), timeout=10)
-        if app.config['MAIL_USE_TLS']:
+        server = smtplib.SMTP(app.config['MAIL_SERVER'], int(app.config['MAIL_PORT']), timeout=10) #Creates a connection to the email server.
+        if app.config['MAIL_USE_TLS']: #make login n email content safe
             server.starttls()
-        server.login(app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
-        server.sendmail(app.config['MAIL_USERNAME'], [recipient], mime.as_string())
+        server.login(app.config['EMAIL_USER'], app.config['EMAIL_PASS'])
+        server.sendmail(app.config['MAIL_USERNAME'], [recipient], mime.as_string()) #sends the email
         server.quit()
         return jsonify({"status": "sent_via_smtplib"})
 
