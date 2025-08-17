@@ -70,31 +70,6 @@ def send_email():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-        
-
-@app.route('/health')
-def health():
-    k = os.getenv('GROQ_API_KEY')
-    return {"groq_key_set": bool(k), "groq_key_masked": f"{k[:4]}...{k[-4:]}" if k and len(k) > 8 else "****"}
-
-@app.route('/test-groq', methods=['GET'])
-def test_groq():
-    if client is None:
-        return jsonify({"ok": False, "error": "GROQ_API_KEY not configured"}), 400
-    try:
-        response = client.chat.completions.create(
-            model="llama3-8b-8192",
-            messages=[
-                {"role": "system", "content": "Tiny health-check assistant."},
-                {"role": "user", "content": "Respond with the single word: pong"}
-            ],
-            max_tokens=5,
-            temperature=0
-        )
-        preview = (getattr(response.choices[0].message, 'content', '') or '').strip()[:200]
-        return jsonify({"ok": True, "preview": preview}), 200
-    except:
-        return jsonify({"ok": False, "error": "Groq API error"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
