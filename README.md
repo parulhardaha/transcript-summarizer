@@ -1,3 +1,36 @@
+
+# AI Transcript Summarizer
+
+AI Transcript Summarizer that generates concise summaries from long transcripts using AI-powered text summarization techniques.
+
+The application allows users to upload or paste transcript content, generate summaries instantly, edit the generated output, and share summaries via email.
+
+---
+
+## Tech Stack
+
+- Python
+- Flask
+- NLP
+- HTML/CSS
+- Bootstrap
+
+---
+
+## Installation
+
+bash
+git clone https://github.com/parulhardaha/transcript-summarizer.git
+
+cd transcript-summarizer
+
+pip install -r requirements.txt
+
+Run python app.py
+
+
+---
+## Screenshots
 <img width="1920" height="795" alt="Screenshot 2025-08-17 165311" src="https://github.com/user-attachments/assets/647f1c9d-a40f-4588-a61a-f7cd75b1c739" />
 
 This is the home page of the Transcript Summarizer.
